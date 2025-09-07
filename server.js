@@ -22,18 +22,28 @@ const corsOptions = {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
       "http://localhost:3000",
-      "https://your-app-name.vercel.app",
-    ];
+      "https://task-management-app-frontend-avvm.vercel.app",
+      "https://task-management-app-frontend-avvm.vercel.app/",
+    ].filter(Boolean); // Remove any undefined values
 
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.log(`CORS blocked origin: ${origin}`);
+      console.log(`Allowed origins: ${allowedOrigins.join(", ")}`);
       callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+  ],
+  optionsSuccessStatus: 200,
 };
 
 const io = new Server(server, {
@@ -56,7 +66,39 @@ app.use(
   })
 );
 
+// Apply CORS middleware
 app.use(cors(corsOptions));
+
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    "http://localhost:3000",
+    "https://task-management-app-frontend-avvm.vercel.app",
+  ].filter(Boolean);
+
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+  );
+
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    res.sendStatus(200);
+    return;
+  }
+
+  next();
+});
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
@@ -80,6 +122,13 @@ app.get("/", (req, res) => {
     status: "OK",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development",
+    cors: {
+      allowedOrigins: [
+        process.env.FRONTEND_URL,
+        "http://localhost:3000",
+        "https://task-management-app-frontend-avvm.vercel.app",
+      ].filter(Boolean),
+    },
   });
 });
 
@@ -88,6 +137,15 @@ app.get("/api/health", (req, res) => {
     status: "OK",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development",
+  });
+});
+
+// Test CORS endpoint
+app.get("/api/test-cors", (req, res) => {
+  res.json({
+    message: "CORS test successful",
+    origin: req.headers.origin,
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -119,6 +177,14 @@ server.listen(PORT, "0.0.0.0", () => {
     `Server running in ${
       process.env.NODE_ENV || "development"
     } mode on port ${PORT}`
+  );
+  console.log(
+    `CORS enabled for origins:`,
+    [
+      process.env.FRONTEND_URL,
+      "http://localhost:3000",
+      "https://task-management-app-frontend-avvm.vercel.app",
+    ].filter(Boolean)
   );
 });
 
