@@ -6,6 +6,7 @@ const getTasks = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
+        success: false,
         message: "Validation failed",
         errors: errors.array(),
       });
@@ -16,14 +17,19 @@ const getTasks = async (req, res) => {
       limit = 10,
       search = "",
       status = "",
+      priority = "",
       sortBy = "createdAt",
       sortOrder = "desc",
     } = req.query;
 
     const filter = { user: req.user._id };
 
-    if (status && status !== "all") {
+    if (status && status !== "all" && status !== "") {
       filter.status = status;
+    }
+
+    if (priority && priority !== "all" && priority !== "") {
+      filter.priority = priority;
     }
 
     if (search) {
@@ -40,6 +46,8 @@ const getTasks = async (req, res) => {
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
+    console.log("Task filter:", filter);
+
     const tasks = await Task.find(filter)
       .sort(sortObj)
       .skip(skip)
@@ -50,6 +58,7 @@ const getTasks = async (req, res) => {
     const totalPages = Math.ceil(total / parseInt(limit));
 
     res.json({
+      success: true,
       tasks,
       pagination: {
         currentPage: parseInt(page),
@@ -62,7 +71,10 @@ const getTasks = async (req, res) => {
     });
   } catch (error) {
     console.error("Get tasks error:", error);
-    res.status(500).json({ message: "Server error while fetching tasks" });
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching tasks",
+    });
   }
 };
 
@@ -71,6 +83,7 @@ const createTask = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
+        success: false,
         message: "Validation failed",
         errors: errors.array(),
       });
@@ -85,12 +98,16 @@ const createTask = async (req, res) => {
     await task.save();
 
     res.status(201).json({
+      success: true,
       message: "Task created successfully",
       task,
     });
   } catch (error) {
     console.error("Create task error:", error);
-    res.status(500).json({ message: "Server error while creating task" });
+    res.status(500).json({
+      success: false,
+      message: "Server error while creating task",
+    });
   }
 };
 
@@ -102,13 +119,22 @@ const getTask = async (req, res) => {
     });
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Task not found",
+      });
     }
 
-    res.json({ task });
+    res.json({
+      success: true,
+      task,
+    });
   } catch (error) {
     console.error("Get task error:", error);
-    res.status(500).json({ message: "Server error while fetching task" });
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching task",
+    });
   }
 };
 
@@ -117,6 +143,7 @@ const updateTask = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
+        success: false,
         message: "Validation failed",
         errors: errors.array(),
       });
@@ -129,16 +156,23 @@ const updateTask = async (req, res) => {
     );
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Task not found",
+      });
     }
 
     res.json({
+      success: true,
       message: "Task updated successfully",
       task,
     });
   } catch (error) {
     console.error("Update task error:", error);
-    res.status(500).json({ message: "Server error while updating task" });
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating task",
+    });
   }
 };
 
@@ -150,13 +184,22 @@ const deleteTask = async (req, res) => {
     });
 
     if (!task) {
-      return res.status(404).json({ message: "Task not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Task not found",
+      });
     }
 
-    res.json({ message: "Task deleted successfully" });
+    res.json({
+      success: true,
+      message: "Task deleted successfully",
+    });
   } catch (error) {
     console.error("Delete task error:", error);
-    res.status(500).json({ message: "Server error while deleting task" });
+    res.status(500).json({
+      success: false,
+      message: "Server error while deleting task",
+    });
   }
 };
 
@@ -165,16 +208,19 @@ const getTaskStats = async (req, res) => {
     const userId = req.user._id;
 
     const totalTasks = await Task.countDocuments({ user: userId });
+
     const completedTasks = await Task.countDocuments({
       user: userId,
       status: "done",
     });
+
     const pendingTasks = await Task.countDocuments({
       user: userId,
       status: "pending",
     });
 
     res.json({
+      success: true,
       totalTasks,
       completedTasks,
       pendingTasks,
@@ -183,7 +229,10 @@ const getTaskStats = async (req, res) => {
     });
   } catch (error) {
     console.error("Get stats error:", error);
-    res.status(500).json({ message: "Server error while fetching stats" });
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching stats",
+    });
   }
 };
 

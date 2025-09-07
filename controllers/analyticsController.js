@@ -1,6 +1,5 @@
 const Task = require("../models/Task");
 
-// @desc    Get dashboard analytics
 const getDashboardAnalytics = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -8,14 +7,17 @@ const getDashboardAnalytics = async (req, res) => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const totalTasks = await Task.countDocuments({ user: userId });
+
     const completedTasks = await Task.countDocuments({
       user: userId,
-      status: "completed",
+      status: "done",
     });
+
     const pendingTasks = await Task.countDocuments({
       user: userId,
       status: "pending",
     });
+
     const inProgressTasks = await Task.countDocuments({
       user: userId,
       status: "in-progress",
@@ -24,7 +26,7 @@ const getDashboardAnalytics = async (req, res) => {
     const overdueTasks = await Task.countDocuments({
       user: userId,
       dueDate: { $lt: new Date() },
-      status: { $ne: "completed" },
+      status: { $ne: "done" },
     });
 
     const today = new Date();
@@ -43,9 +45,10 @@ const getDashboardAnalytics = async (req, res) => {
       user: userId,
       createdAt: { $gte: startOfMonth },
     });
+
     const monthlyCompleted = await Task.countDocuments({
       user: userId,
-      status: "completed",
+      status: "done",
       completedAt: { $gte: startOfMonth },
     });
 
@@ -78,6 +81,7 @@ const getDashboardAnalytics = async (req, res) => {
     ]);
 
     res.json({
+      success: true,
       overview: {
         totalTasks,
         completedTasks,
@@ -98,7 +102,10 @@ const getDashboardAnalytics = async (req, res) => {
     });
   } catch (error) {
     console.error("Analytics error:", error);
-    res.status(500).json({ message: "Server error while fetching analytics" });
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching analytics",
+    });
   }
 };
 
