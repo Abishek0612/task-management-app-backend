@@ -15,7 +15,7 @@ const taskSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "in-progress", "completed", "cancelled"],
+      enum: ["pending", "done"],
       default: "pending",
     },
     priority: {
@@ -38,50 +38,13 @@ const taskSchema = new mongoose.Schema(
     dueDate: {
       type: Date,
     },
-    estimatedTime: {
-      type: Number,
-      min: [0, "Estimated time cannot be negative"],
-    },
-    actualTime: {
-      type: Number,
-      min: [0, "Actual time cannot be negative"],
-    },
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    attachments: [
-      {
-        name: String,
-        url: String,
-        type: String,
-        size: Number,
-      },
-    ],
-    subtasks: [
-      {
-        title: {
-          type: String,
-          required: true,
-          trim: true,
-        },
-        completed: {
-          type: Boolean,
-          default: false,
-        },
-        createdAt: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
     completedAt: {
       type: Date,
-    },
-    isArchived: {
-      type: Boolean,
-      default: false,
     },
   },
   {
@@ -96,9 +59,9 @@ taskSchema.index({ title: "text", description: "text", category: "text" });
 
 taskSchema.pre("save", function (next) {
   if (this.isModified("status")) {
-    if (this.status === "completed" && !this.completedAt) {
+    if (this.status === "done" && !this.completedAt) {
       this.completedAt = new Date();
-    } else if (this.status !== "completed") {
+    } else if (this.status !== "done") {
       this.completedAt = undefined;
     }
   }
