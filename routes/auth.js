@@ -13,12 +13,15 @@ const {
 
 const router = express.Router();
 
+// Public routes
 router.post("/register", authValidation.register, register);
 router.post("/login", authValidation.login, login);
 router.post("/forgot-password", authValidation.forgotPassword, forgotPassword);
 router.post("/reset-password", authValidation.resetPassword, resetPassword);
+
+// Protected routes
 router.get("/me", auth, getCurrentUser);
 router.put("/profile", auth, authValidation.updateProfile, updateProfile);
-router.post("/logout", logout);
+router.post("/logout", auth, logout);
 
 module.exports = router;
