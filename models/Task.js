@@ -58,7 +58,7 @@ taskSchema.index({ user: 1, dueDate: 1 });
 taskSchema.index({ title: "text", description: "text", category: "text" });
 
 taskSchema.pre("save", function (next) {
-  if (this.isModified("status")) {
+  if (this.isNew || this.isModified("status")) {
     if (this.status === "done" && !this.completedAt) {
       this.completedAt = new Date();
     } else if (this.status !== "done") {
@@ -67,5 +67,4 @@ taskSchema.pre("save", function (next) {
   }
   next();
 });
-
 module.exports = mongoose.model("Task", taskSchema);
